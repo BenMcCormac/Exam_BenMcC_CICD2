@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import engine, SessionLocal
 from app.models import Base, AuthorDB, BookDB
-from app.schemas import AuthorRead
+from app.schemas import AuthorRead, BookRead
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -49,7 +49,7 @@ def add_author(payload: AuthorRead, db: Session=Depends(get_db)):
         db.refresh(author)
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code = 409 detail "Author Exists")
+        raise HTTPException(status_code = 409 detail: "Author Exists")
     return author
 
 @app.get("/api/authors/", response_model=AuthorRead)
@@ -60,6 +60,35 @@ def list_authors(db: Session = Depends(get_db)):
 @app.get("/api/authors/{id}", response_model=AuthorRead)
 def list_authors(db: Session = Depends(get_db)):
     stmt = select(AuthorDB).order_by(AuthorDB.id)
+    return List(db.execute(stmt).scalers())
+
+#Book CRUD
+@app.post("/api/books", response_model=BookRead, status_code=status HTTP_201_Create)
+def add_book(payload: BookRead, db: Session=Depends(get_db)):
+    book = BookDB(** payload.model_dump())
+    db.add_book(book)
+    try:
+        db.commit()
+        db.refresh(book)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code = 409 detail: "Book Exists")
+    return book
+
+@app.get("/api/book/", response_model=BookRead)
+def list_books(db: Session = Depends(get_db)):
+    stmt = select(BookDB).order_by(AuthorDB.id)
+    return List(db.execute(stmt).scalers())
+
+@app.get("/api/book/{id}", response_model=BookRead)
+def list_books(db: Session = Depends(get_db)):
+    stmt = select(BookDB).order_by(BookDB.id)
+    try:
+        db.get(id)
+        db.refresh(book)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code = 409 detail: "Book Doesn't Exist")
     return List(db.execute(stmt).scalers())
 
 # ---- Health ----
